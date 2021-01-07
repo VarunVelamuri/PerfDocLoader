@@ -92,11 +92,12 @@ func WaitTillAllIndxesActive(defnIds []uint64) {
 	}
 	ticker := time.NewTicker(30 * time.Minute)
 	for {
+	innerLoop:
 		select {
 		case <-ticker.C:
 			return
+		default:
 		}
-	innerLoop:
 		for i, defnID := range defnIds {
 			state, _ := client.IndexState(defnID)
 			if state != c.INDEX_STATE_ACTIVE {
