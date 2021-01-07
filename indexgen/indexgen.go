@@ -107,5 +107,8 @@ func WaitTillAllIndxesActive(defnIds []uint64) {
 				defnIds = append(defnIds[:i], defnIds[i+1:]...)
 			}
 		}
+		if len(defnIds) == 0 {
+			return
+		}
 	}
 }
