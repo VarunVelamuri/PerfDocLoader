@@ -52,6 +52,15 @@ func main() {
 			coll := fmt.Sprintf("%s-%v", options.CollPrefix, i)
 			indexgen.CreateIndexes(options.Bucket, options.Scope, coll)
 		}
+
+		for i := 0; i < options.NumColl; i++ {
+			indexes := make([]string, 0)
+			for j := 0; j < 10; j++ {
+				indexes = append(indexes, fmt.Sprintf("%s:%s:%s-%v:index-%v", options.Bucket, options.Scope, options.CollPrefix, i, j))
+			}
+			indexgen.BuildIndexes(indexes)
+		}
+
 	}
 
 	time.Sleep(5 * time.Second)
