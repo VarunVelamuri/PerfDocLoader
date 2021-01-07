@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ func main() {
 
 	jsonDocs := make(map[string]interface{})
 
+	log.Printf("....... Starting initial docloading phase........")
 	if options.InitDocsPerColl > 0 {
 		// Generage JSON's
 		seed := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -42,6 +44,7 @@ func main() {
 		wg.Wait()
 	}
 
+	log.Printf("....... Starting incremental docloading phase........")
 	if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
 		opsPerColl := options.IncrOpsPerSec / options.NumColl
 		newDocs := make(map[string]interface{})
