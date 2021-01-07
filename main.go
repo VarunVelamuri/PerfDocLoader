@@ -44,20 +44,26 @@ func main() {
 	}
 
 	age := 1000
-	for {
-		if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
-			opsPerColl := options.IncrOpsPerSec / options.NumColl
+	if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
+		opsPerColl := options.IncrOpsPerSec / options.NumColl
+		newDocs := make(map[string]interface{})
+		i := 0
+		for key, value := range jsonDocs {
+			newDocs[key] = value
+			i++
+			if i > opsPerColl {
+				break
+			}
+		}
+
+		for {
 			start := time.Now().UnixNano()
 			age++
-			i := 0
-			for key, value := range jsonDocs {
+
+			for key, value := range newDocs {
 				doc := value.(map[string]interface{})
 				doc["age"] = age
-				jsonDocs[key] = doc
-				i++
-				if i > opsPerColl {
-					break
-				}
+				newDocs[key] = doc
 			}
 
 			var wg sync.WaitGroup
@@ -65,7 +71,7 @@ func main() {
 				wg.Add(1)
 				go func(index int) {
 					defer wg.Done()
-					collections.PushDocs(jsonDocs, index, true)
+					collections.PushDocs(newDocs, index, true)
 				}(i)
 			}
 
