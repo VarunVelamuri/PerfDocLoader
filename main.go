@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"sync"
 	"time"
@@ -43,7 +42,6 @@ func main() {
 		wg.Wait()
 	}
 
-	age := 1000
 	if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
 		opsPerColl := options.IncrOpsPerSec / options.NumColl
 		newDocs := make(map[string]interface{})
@@ -51,41 +49,20 @@ func main() {
 		for key, value := range jsonDocs {
 			newDocs[key] = value
 			i++
-			if i > opsPerColl {
+			if i >= opsPerColl {
 				break
 			}
 		}
 
-		for {
-			start := time.Now().UnixNano()
-			age++
-
-			for key, value := range newDocs {
-				doc := value.(map[string]interface{})
-				doc["age"] = age
-				newDocs[key] = doc
-			}
-
-			var wg sync.WaitGroup
-			for i := 0; i < options.NumColl; i++ {
-				wg.Add(1)
-				go func(index int) {
-					defer wg.Done()
-					collections.PushDocs(newDocs, index, true)
-				}(i)
-			}
-
-			wg.Wait()
-			end := time.Now().UnixNano()
-
-			if end-start < int64(time.Second) {
-				time.Sleep(time.Duration(end-start) * time.Nanosecond)
-			}
-			if !options.LoopIncr {
-				log.Printf("Exiting as loopIncr is set to false")
-				return
-			}
-			fmt.Printf(".")
+		var wg sync.WaitGroup
+		for i := 0; i < options.NumColl; i++ {
+			wg.Add(1)
+			go func(index int) {
+				defer wg.Done()
+				collections.PushDocs(newDocs, index, true)
+			}(i)
 		}
+
+		wg.Wait()
 	}
 }
