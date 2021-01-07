@@ -9,6 +9,7 @@ import (
 
 	collections "github.com/couchbase/PerfDocLoader/collections"
 	"github.com/couchbase/PerfDocLoader/docgen"
+	"github.com/couchbase/PerfDocLoader/indexgen"
 	options "github.com/couchbase/PerfDocLoader/options"
 )
 
@@ -45,6 +46,14 @@ func main() {
 	}
 
 	log.Printf("........ Done with initial docloading phase ........")
+
+	if options.IndexGen {
+		for i := 0; i < options.NumColl; i++ {
+			coll := fmt.Sprintf("%s-%v", options.CollPrefix, i)
+			indexgen.CreateIndexes(options.Bucket, options.Scope, coll)
+		}
+	}
+
 	time.Sleep(5 * time.Second)
 	log.Printf("........ Starting incremental docloading phase ........")
 	if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
@@ -58,7 +67,7 @@ func main() {
 				break
 			}
 		}
-		log.Printf("........ OpsPerColl: %v, len(newDocs): %v ........",opsPerColl, len(newDocs))
+		log.Printf("........ OpsPerColl: %v, len(newDocs): %v ........", opsPerColl, len(newDocs))
 
 		var wg sync.WaitGroup
 		for i := 0; i < options.NumColl; i++ {
