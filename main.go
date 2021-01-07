@@ -54,6 +54,7 @@ func main() {
 				doc := value.(map[string]interface{})
 				doc["age"] = age
 				jsonDocs[key] = doc
+				i++
 				if i > opsPerColl {
 					break
 				}
