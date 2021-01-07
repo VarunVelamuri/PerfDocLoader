@@ -53,14 +53,18 @@ func main() {
 			indexgen.CreateIndexes(options.Bucket, options.Scope, coll)
 		}
 
+		defnIDs := make([]uint64, 0)
 		for i := 0; i < options.NumColl; i++ {
 			indexes := make([]string, 0)
 			for j := 0; j < 10; j++ {
 				indexes = append(indexes, fmt.Sprintf("%s:%s:%s-%v:index-%v", options.Bucket, options.Scope, options.CollPrefix, i, j))
 			}
-			indexgen.BuildIndexes(indexes)
+			defnIds := indexgen.BuildIndexes(indexes)
+			defnIDs = append(defnIDs, defnIds...)
 		}
-
+		log.Printf("............ Waiting for all indexes to become active ............")
+		indexgen.WaitTillAllIndxesActive(defnIDs)
+		log.Printf("............ All indexes are active ............")
 	}
 
 	time.Sleep(5 * time.Second)

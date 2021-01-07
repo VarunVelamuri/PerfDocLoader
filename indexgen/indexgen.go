@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/couchbase/PerfDocLoader/options"
 	c "github.com/couchbase/indexing/secondary/common"
@@ -33,7 +34,7 @@ func CreateIndexes(bucket, scope, coll string) {
 	createDeferIndex("index-9", bucket, scope, coll, []string{"name"})
 }
 
-func BuildIndexes(indexes []string) {
+func BuildIndexes(indexes []string) []uint64 {
 	client, err := secondaryindex.GetOrCreateClient(options.IndexAddr, "test")
 	if err != nil {
 		panic(err)
@@ -56,6 +57,7 @@ func BuildIndexes(indexes []string) {
 		err = client.BuildIndexes(defnIDs)
 		log.Printf("Index building for: %v, err: %v", defnIDs, err)
 	}
+	return defnIDs
 }
 
 func processIndexName(indexName string) (string, string, string, string, error) {
@@ -80,4 +82,30 @@ func processIndexName(indexName string) (string, string, string, string, error) 
 		collection = c.DEFAULT_COLLECTION
 	}
 	return bucket, scope, collection, iname, nil
+}
+
+func WaitTillAllIndxesActive(defnIds []uint64) {
+
+	client, err := secondaryindex.GetOrCreateClient(options.IndexAddr, "test")
+	if err != nil {
+		panic(err)
+	}
+	ticker := time.NewTicker(30 * time.Minute)
+	for {
+		select {
+		case <-ticker.C:
+			return
+		}
+	innerLoop:
+		for i, defnID := range defnIds {
+			state, _ := client.IndexState(defnID)
+			if state != c.INDEX_STATE_ACTIVE {
+				time.Sleep(5 * time.Second)
+				goto innerLoop
+			} else {
+				// Delete the definition ID as index is active
+				defnIds = append(defnIds[:i], defnIds[i+1:]...)
+			}
+		}
+	}
 }
