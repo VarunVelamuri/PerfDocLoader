@@ -44,6 +44,7 @@ func main() {
 		wg.Wait()
 	}
 
+	time.Sleep(5 * time.Second)
 	log.Printf("....... Starting incremental docloading phase........")
 	if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
 		opsPerColl := options.IncrOpsPerSec / options.NumColl
@@ -62,7 +63,11 @@ func main() {
 			wg.Add(1)
 			go func(index int) {
 				defer wg.Done()
-				collections.PushDocs(newDocs, index, true)
+				newDocsCopy := make(map[string]interface{})
+				for docId, doc := range newDocs {
+					newDocsCopy[docId] = doc
+				}
+				collections.PushDocs(newDocsCopy, index, true)
 			}(i)
 		}
 

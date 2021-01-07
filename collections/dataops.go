@@ -67,7 +67,11 @@ func PushDocs(jsonDocs map[string]interface{}, index int, upsert bool) {
 			log.Printf("............ Sleeping for %v nanoseconds")
 			time.Sleep(time.Duration(end-start) * time.Nanosecond)
 		}
-		if !options.LoopIncr || !upsert {
+		if !upsert {
+			return
+		}
+
+		if !options.LoopIncr {
 			log.Printf("Exiting as loopIncr is set to false")
 			return
 		}
