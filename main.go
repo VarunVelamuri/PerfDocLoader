@@ -46,12 +46,17 @@ func main() {
 	age := 1000
 	for {
 		if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
+			opsPerColl := options.IncrOpsPerSec / options.NumColl
 			start := time.Now().UnixNano()
 			age++
+			i := 0
 			for key, value := range jsonDocs {
 				doc := value.(map[string]interface{})
 				doc["age"] = age
 				jsonDocs[key] = doc
+				if i > opsPerColl {
+					break
+				}
 			}
 
 			var wg sync.WaitGroup
