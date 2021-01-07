@@ -44,8 +44,9 @@ func main() {
 		wg.Wait()
 	}
 
+	log.Printf("........ Done with initial docloading phase ........")
 	time.Sleep(5 * time.Second)
-	log.Printf("....... Starting incremental docloading phase........")
+	log.Printf("........ Starting incremental docloading phase ........")
 	if options.InitDocsPerColl > 0 && options.IncrOpsPerSec > 0 {
 		opsPerColl := options.IncrOpsPerSec / options.NumColl
 		newDocs := make(map[string]interface{})
@@ -57,6 +58,7 @@ func main() {
 				break
 			}
 		}
+		log.Printf("........ OpsPerColl: %v, len(newDocs): %v ........",opsPerColl, len(newDocs))
 
 		var wg sync.WaitGroup
 		for i := 0; i < options.NumColl; i++ {
@@ -65,7 +67,12 @@ func main() {
 				defer wg.Done()
 				newDocsCopy := make(map[string]interface{})
 				for docId, doc := range newDocs {
-					newDocsCopy[docId] = doc
+					doc1 := make(map[string]interface{})
+					docOrig := doc.(map[string]interface{})
+					for key, value := range docOrig {
+						doc1[key] = value
+					}
+					newDocsCopy[docId] = doc1
 				}
 				collections.PushDocs(newDocsCopy, index, true)
 			}(i)

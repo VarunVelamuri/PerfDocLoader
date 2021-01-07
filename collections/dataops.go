@@ -64,8 +64,8 @@ func PushDocs(jsonDocs map[string]interface{}, index int, upsert bool) {
 		}
 		end := time.Now().UnixNano()
 		if end-start < int64(time.Second) {
-			log.Printf("............ Sleeping for %v nanoseconds")
-			time.Sleep(time.Duration(end-start) * time.Nanosecond)
+			//log.Printf("............ Sleeping for %v nanoseconds", end-start)
+			time.Sleep(time.Duration(int64(time.Second) - (end-start)) * time.Nanosecond)
 		}
 		if !upsert {
 			return
@@ -75,6 +75,6 @@ func PushDocs(jsonDocs map[string]interface{}, index int, upsert bool) {
 			log.Printf("Exiting as loopIncr is set to false")
 			return
 		}
-		fmt.Printf(".")
+		//fmt.Printf(".")
 	}
 }
