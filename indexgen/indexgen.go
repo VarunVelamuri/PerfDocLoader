@@ -85,7 +85,10 @@ func processIndexName(indexName string) (string, string, string, string, error) 
 }
 
 func WaitTillAllIndxesActive(defnIds []uint64) {
-
+	defnIdMap := make(map[uint64]bool)
+	for _, defnId := range defnIds {
+		defnIdMap[defnId] = true
+	}
 	client, err := secondaryindex.GetOrCreateClient(options.IndexAddr, "test")
 	if err != nil {
 		panic(err)
@@ -98,17 +101,17 @@ func WaitTillAllIndxesActive(defnIds []uint64) {
 			return
 		default:
 		}
-		for i, defnID := range defnIds {
+		for defnID, _ := range defnIdMap {
 			state, _ := client.IndexState(defnID)
 			if state != c.INDEX_STATE_ACTIVE {
 				time.Sleep(5 * time.Second)
 				goto innerLoop
 			} else {
 				// Delete the definition ID as index is active
-				defnIds = append(defnIds[:i], defnIds[i+1:]...)
+				delete(defnIdMap, defnID)
 			}
 		}
-		if len(defnIds) == 0 {
+		if len(defnIdMap) == 0 {
 			return
 		}
 	}
