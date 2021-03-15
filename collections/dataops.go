@@ -9,7 +9,7 @@ import (
 	"github.com/couchbase/gocb/v2"
 )
 
-func PushDocs(jsonDocs map[string]interface{}, index int, upsert bool) {
+func PushDocs(bucketn string, jsonDocs map[string]interface{}, index int, upsert bool) {
 	collPrefix := options.CollPrefix
 	collName := fmt.Sprintf("%s-%v", collPrefix, index)
 
@@ -27,7 +27,7 @@ func PushDocs(jsonDocs map[string]interface{}, index int, upsert bool) {
 	}
 
 	// Connect to corresponding bucket
-	bucket := cluster.Bucket("default")
+	bucket := cluster.Bucket(bucketn)
 
 	err = bucket.WaitUntilReady(10*time.Second, nil)
 	if err != nil {
@@ -65,7 +65,7 @@ func PushDocs(jsonDocs map[string]interface{}, index int, upsert bool) {
 		end := time.Now().UnixNano()
 		if end-start < int64(time.Second) {
 			//log.Printf("............ Sleeping for %v nanoseconds", end-start)
-			time.Sleep(time.Duration(int64(time.Second) - (end-start)) * time.Nanosecond)
+			time.Sleep(time.Duration(int64(time.Second)-(end-start)) * time.Nanosecond)
 		}
 		if !upsert {
 			return

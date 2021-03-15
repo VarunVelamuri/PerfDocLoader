@@ -17,8 +17,15 @@ func main() {
 	options.ArgParse()
 	options.PrintOptions()
 
+	buckets := make([]string, 0, 10)
+	for i := 1; i <= 10; i++ {
+		buckets = append(buckets, fmt.Sprintf("%bucket-%v", i))
+	}
+
 	if options.CollGen {
-		collections.CreateCollections()
+		for i := 1; i <= 10; i++ {
+			collections.CreateCollections(buckets[i])
+		}
 	}
 
 	time.Sleep(5 * time.Second)
@@ -34,37 +41,47 @@ func main() {
 			jsonDocs[docId] = docgen.GenerateJson()
 		}
 
-		var wg sync.WaitGroup
-		for i := 0; i < options.NumColl; i++ {
-			wg.Add(1)
-			go func(index int) {
-				defer wg.Done()
-				collections.PushDocs(jsonDocs, index, false)
-			}(i)
+		for i := 1; i <= 10; i++ {
+			var wg sync.WaitGroup
+			for i := 1; i <= options.NumColl; i++ {
+				wg.Add(1)
+				go func(index int) {
+					defer wg.Done()
+					collections.PushDocs(buckets[i], jsonDocs, index, false)
+				}(i)
+			}
+			wg.Wait()
 		}
-		wg.Wait()
 	}
 
 	log.Printf("........ Done with initial docloading phase ........")
 
 	if options.IndexGen {
-		for i := 0; i < options.NumColl; i++ {
-			coll := fmt.Sprintf("%s-%v", options.CollPrefix, i)
-			indexgen.CreateIndexes(options.Bucket, options.Scope, coll)
-		}
+		var bucketWg sync.WaitGroup
+		for i := 1; i <= 10; i++ {
+			bucketWg.Add(1)
+			go func(index int) {
+				defer bucketWg.Done()
+				bucketn := fmt.Sprintf("bucket-%v", index)
+				for j := 1; j <= options.NumColl; j++ {
+					coll := fmt.Sprintf("%s-%v", options.CollPrefix, j)
+					indexgen.CreateIndexes(bucketn, options.Scope, coll)
+				}
 
-		defnIDs := make([]uint64, 0)
-		for i := 0; i < options.NumColl; i++ {
-			indexes := make([]string, 0)
-			for j := 0; j < 10; j++ {
-				indexes = append(indexes, fmt.Sprintf("%s:%s:%s-%v:index-%v", options.Bucket, options.Scope, options.CollPrefix, i, j))
-			}
-			defnIds := indexgen.BuildIndexes(indexes)
-			defnIDs = append(defnIDs, defnIds...)
+				defnIDs := make([]uint64, 0)
+				for i := 1; i <= options.NumColl; i++ {
+					indexes := make([]string, 0)
+					for j := 0; j < 10; j++ {
+						indexes = append(indexes, fmt.Sprintf("%s:%s:%s-%v:index-%v", options.Bucket, options.Scope, options.CollPrefix, i, j))
+					}
+					defnIds := indexgen.BuildIndexes(indexes)
+					defnIDs = append(defnIDs, defnIds...)
+				}
+				log.Printf("............ Waiting for all indexes to become active ............")
+				indexgen.WaitTillAllIndxesActive(defnIDs)
+				log.Printf("............ All indexes are active ............")
+			}(i)
 		}
-		log.Printf("............ Waiting for all indexes to become active ............")
-		indexgen.WaitTillAllIndxesActive(defnIDs)
-		log.Printf("............ All indexes are active ............")
 	}
 
 	time.Sleep(5 * time.Second)
@@ -96,7 +113,7 @@ func main() {
 					}
 					newDocsCopy[docId] = doc1
 				}
-				collections.PushDocs(newDocsCopy, index, true)
+				collections.PushDocs("bucket-0", newDocsCopy, index, true)
 			}(i)
 		}
 
